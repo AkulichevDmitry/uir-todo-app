@@ -1,0 +1,273 @@
+openapi: 3.0.3
+
+info:
+  title: Todo App API
+  description: |
+    Simple CRUD Todo application.
+    Authentication via JWT stored in HTTP-only cookies.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+
+tags:
+  - name: Auth
+    description: Authentication
+  - name: Todos
+    description: Todo management
+
+paths:
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "200":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: User already exists
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "200":
+          description: Login successful, JWT set in HTTP-only cookie
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: access_token cookie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "401":
+          description: Invalid credentials
+
+  /todos:
+    get:
+      tags: [Todos]
+      summary: Get all user todos
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TodoOut"
+        "401":
+          description: Unauthorized
+
+    post:
+      tags: [Todos]
+      summary: Create new todo
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TodoCreate"
+      responses:
+        "200":
+          description: Todo created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodoOut"
+        "401":
+          description: Unauthorized
+
+  /todos/{todo_id}:
+    get:
+      tags: [Todos]
+      summary: Get todo by id
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Todo found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodoOut"
+        "404":
+          description: Todo not found
+        "401":
+          description: Unauthorized
+
+    put:
+      tags: [Todos]
+      summary: Update todo (full)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TodoCreate"
+      responses:
+        "200":
+          description: Todo updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodoOut"
+        "404":
+          description: Todo not found
+        "401":
+          description: Unauthorized
+
+    patch:
+      tags: [Todos]
+      summary: Update todo (partial)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TodoUpdate"
+      responses:
+        "200":
+          description: Todo updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodoOut"
+        "404":
+          description: Todo not found
+        "401":
+          description: Unauthorized
+
+    delete:
+      tags: [Todos]
+      summary: Delete todo
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Todo deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+        "404":
+          description: Todo not found
+        "401":
+          description: Unauthorized
+
+components:
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+
+  schemas:
+    UserCreate:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          example: secret123
+
+    TodoCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          example: Buy milk
+
+    TodoUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Buy bread
+        is_done:
+          type: boolean
+          example: true
+
+    TodoOut:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Buy milk
+        is_done:
+          type: boolean
+          example: false
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+
+    DeleteResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+          example: true
