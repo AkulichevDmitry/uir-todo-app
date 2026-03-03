@@ -11,7 +11,7 @@ from auth import create_token
 router = APIRouter(prefix="/auth")
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate):
+def register(user: UserCreate,response: Response):
     db: Session = SessionLocal()
 
     if db.query(User).filter_by(username=user.username).first():
@@ -23,6 +23,15 @@ def register(user: UserCreate):
     )
     db.add(new_user)
     db.commit()
+
+    token = create_token(new_user.id)
+    response.set_cookie(
+        "access_token",
+        token,
+        httponly=True,
+        samesite="strict"
+    )
+
     return {"ok": True}
 
 
